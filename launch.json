@@ -1,0 +1,22 @@
+{
+  "kind": "evm_project",
+  "token": {
+    "contract": "MembershipToken",
+    "name": "Membership Club Token",
+    "symbol": "MCLUB",
+    "decimals": 18
+  },
+  "contracts": [
+    {
+      "contract": "MembershipBadge",
+      "constructorArgs": ["$token", "100000000000000000000"]
+    }
+  ],
+  "pool": {
+    "pairedCurrency": "0x0000000000000000000000000000000000000000",
+    "fee": 3000,
+    "tickSpacing": 60,
+    "initialPrice": "79228162514264337593543950336"
+  },
+  "notes": "Token-gated membership club launch on Sepolia (chainId 11155111) via ProjectFactory. Token: MembershipToken (src/MembershipToken.sol), ERC-20 'Membership Club Token' / 'MCLUB', 18 decimals, no constructor arguments, nonpayable. Its constructor mints the whole fixed supply of 1,000,000,000 MCLUB (10^27 minor units) once to msg.sender, i.e. the factory, which then seeds the pool and the MerkleDistributor. Stock OpenZeppelin 5.4.0 ERC20 otherwise: no mint function, no owner, no roles, no pause, no fee on transfer, no proxy. Application contract 1/1: MembershipBadge (src/MembershipBadge.sol), soulbound ERC-721 'Membership Badge' / 'MBADGE', constructor(address token_, uint256 threshold_), nonpayable. constructorArgs: [\"$token\" -> address of MembershipToken deployed in this launch, \"100000000000000000000\" -> threshold of 100 MCLUB expressed in 18-decimal minor units (100e18)]. The constructor reverts with InvalidConfiguration() on a zero token address or a zero threshold; both values are immutable and there is no setter. mint() issues exactly one badge to msg.sender when token.balanceOf(msg.sender) >= threshold and emits BadgeMinted(address indexed member, uint256 indexed tokenId) next to the standard ERC-721 Transfer from address(0). Every transfer and approval path reverts with Soulbound(); there is no burn. Views: isEligible(address), hasBadge(address), isLapsed(address) (badge held but balance now below threshold), badgeOf(address) (0 = none), token(), threshold(), totalMinted(). Ownership and privileges: neither contract has an owner, admin function, initializer, upgrade path, DELEGATECALL, CALLCODE or SELFDESTRUCT, so $owner is not used anywhere and no wallet is named in this manifest. The badge never takes custody of tokens; eligibility is a live balanceOf read on the token, so the same MCLUB can later qualify another address and the first holder is then reported lapsed (documented, intended behaviour). Dependency order: token first, then badge; the badge constructor only stores the token address and makes no external call. Runtime sizes are far below EIP-170 (badge about 4.7 KB, token about 1.7 KB). Pool: MCLUB paired against native ETH (zero address), fee 3000, tickSpacing 60, no hook, initialPrice 79228162514264337593543950336 (sqrtPriceX96 for 1:1) as the legacy fallback; the deployer derives the effective opening price from the pinned policy's initialMarketCapWei (Sepolia policy v5, 20 ETH opening FDV) and seeds liquidity with the launch token only. Supply, allocations, reward split, contributor lock, chainId and policy version come from the pinned launch policy, not from this file. Threshold rationale: 100 MCLUB is the value used throughout the accepted test suite and docs/contracts.md; at a 20 ETH FDV over 10^9 tokens it costs roughly 2e-6 ETH, so qualifying on Sepolia is cheap while still requiring a real purchase from the pool. Changing the threshold later requires deploying a new badge contract and a new handoff. Compiler: solc 0.8.26, optimizer 200 runs, evm_version cancun, bytecode_hash none, cbor_metadata false (foundry.toml, unchanged). ABI exports: docs/abi/MembershipToken.json and docs/abi/MembershipBadge.json; integration notes in docs/contracts.md. The frontend reads deployed addresses and the pool reference from the deployment handoff, never from this file."
+}
